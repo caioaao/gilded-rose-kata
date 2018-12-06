@@ -37,7 +37,7 @@
                        (:quality (item/on-next-day item))))))
 
 (defspec sell-in-decreases-by-one
-  (prop/for-all [item (exclude-items (item-gen) item/legendary-items)]
+  (prop/for-all [item (-> (gen/such-that :sell-in (exclude-items (item-gen) item/legendary-items)))]
                 (is (= (dec (:sell-in item))
                        (:sell-in (item/on-next-day item))))))
 
@@ -61,8 +61,17 @@
                         (item/quality-limit item)))))
 
 (defspec aged-brie-quality-increases-over-time
-  (prop/for-all [item (gen/such-that #(-> % :quality (< 50))
+  (prop/for-all [item (gen/such-that #(and (-> % :quality (< 50))
+                                           (:sell-in %))
                                      (within-items (item-gen) ["Aged Brie"])
-                                     30)]
+                                     50)]
                 (is (< (:quality item) (:quality (item/on-next-day item))))))
 
+(defspec sulfuras-never-changes
+  (prop/for-all [item (-> (item-gen)
+                          (within-items #{"Sulfuras, Hand Of Ragnaros"}))]
+                (is (match? item (item/on-next-day item)))))
+
+
+;;TODO test backstage passes
+(defspec backstage-passes)
