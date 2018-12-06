@@ -1,12 +1,11 @@
 (ns gilded-rose.item
   (:require [clojure.spec.alpha :as s]))
 
-(def special-items #{"Aged Brie" "Sulfuras, Hand Of Ragnaros"})
+(def aged-items #{"Aged Brie"})
+(def legendary-items #{"Sulfuras, Hand Of Ragnaros"})
 
-(s/def ::name (s/or :special-items special-items :regular-items string?))
-
+(s/def ::name string?)
 (s/def ::sell-in int?)
-
 (s/def ::quality nat-int?)
 
 (s/def ::item (s/keys :req-un [::name ::sell-in ::quality]))
@@ -26,7 +25,7 @@
 (defn item [item-name, sell-in, quality]
   {:name item-name, :sell-in sell-in, :quality quality})
 
-(defmulti on-next-day :item)
+(defmulti on-next-day :name)
 
 (defmethod on-next-day :default
   [{:keys [sell-in] :as item}]

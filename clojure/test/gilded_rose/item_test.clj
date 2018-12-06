@@ -9,29 +9,35 @@
             [matcher-combinators.matchers :as m]
             [clojure.spec.alpha :as s]))
 
+(defn sanitize-quality [item]
+  (update item :quality min (item/quality-limit item)))
+
 (defn item-gen []
-  (gen/fmap #(update % :quality min (item/quality-limit %)) (s/gen ::item/item)))
+  (gen/fmap sanitize-quality (s/gen ::item/item)))
 
-(defn regular-item-gen []
-  (->> (item-gen)
-       (gen/such-that #(not (contains? item/special-items (:name %))))))
+(defn exclude-items [item-gen items]
+  (gen/such-that #(not (contains? items (:name %))) item-gen))
 
-(defn specific-item-gen [name]
-  (gen/fmap #(assoc % :item name)
-            (item-gen)))
+(defn within-items [item-gen items]
+  (->> (gen/tuple (gen/elements items) item-gen)
+       (gen/fmap (fn [[name item]] (assoc item :name name)))))
 
 (defspec regular-item-quality-decreases-by-one-before-sell-in-date
-  (prop/for-all [item (gen/such-that #(-> % :sell-in pos?) (regular-item-gen) 30)]
+  (prop/for-all [item (gen/such-that #(some-> % :sell-in pos?)
+                                     (exclude-items (item-gen) item/aged-items)
+                                     30)]
                 (is (= (max 0 (dec (:quality item)))
                        (:quality (item/on-next-day item))))))
 
 (defspec regular-item-quality-decreases-by-two-after-sell-in-date
-  (prop/for-all [item (gen/such-that #(<= (:sell-in %) 0) (regular-item-gen) 30)]
+  (prop/for-all [item (gen/such-that #(some-> % :sell-in (<= 0))
+                                     (exclude-items (item-gen) item/aged-items)
+                                     30)]
                 (is (= (max 0 (- (:quality item) 2))
                        (:quality (item/on-next-day item))))))
 
 (defspec sell-in-decreases-by-one
-  (prop/for-all [item (item-gen)]
+  (prop/for-all [item (exclude-items (item-gen) item/legendary-items)]
                 (is (= (dec (:sell-in item))
                        (:sell-in (item/on-next-day item))))))
 
@@ -39,8 +45,8 @@
   (prop/for-all [item (item-gen)]
                 (is (nat-int? (:quality (item/on-next-day item))))))
 
-(defspec quality-limit-is-50-unless-is-sulfuras
-  (prop/for-all [item (gen/such-that #(not= (:name %) "Sulfuras, Hand Of Ragnaros")
+(defspec quality-limit-is-50-unless-is-legendary
+  (prop/for-all [item (gen/such-that #(not (contains? item/legendary-items (:name %)))
                                      (s/gen ::item/item))]
                 (is (= 50 (item/quality-limit item)))))
 
@@ -55,8 +61,8 @@
                         (item/quality-limit item)))))
 
 (defspec aged-brie-quality-increases-over-time
-  (prop/for-all [item (specific-item-gen "Aged Brie")]
-                (is (or (< (:quality item) (:quality (item/on-next-day item)))
-                        (= (:quality item) 50)))))
-
+  (prop/for-all [item (gen/such-that #(-> % :quality (< 50))
+                                     (within-items (item-gen) ["Aged Brie"])
+                                     30)]
+                (is (< (:quality item) (:quality (item/on-next-day item))))))
 
