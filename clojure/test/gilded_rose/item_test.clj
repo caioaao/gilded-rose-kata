@@ -9,21 +9,48 @@
             [matcher-combinators.matchers :as m]
             [clojure.spec.alpha :as s]))
 
-(defspec quality-decreases-by-one-before-sell-in-date
-  (prop/for-all [item (gen/such-that #(-> % :sell-in pos?) (s/gen ::item/item) 30)]
-                (is (= (dec (:quality item))
+(defn item-gen []
+  (gen/fmap #(update % :quality min (item/quality-limit %)) (s/gen ::item/item)))
+
+(defn regular-item-gen []
+  (->> (item-gen)
+       (gen/such-that #(not (contains? item/special-items (:name %))))))
+
+(defn specific-item-gen [name]
+  (gen/fmap #(assoc % :item name)
+            (item-gen)))
+
+(defspec regular-item-quality-decreases-by-one-before-sell-in-date
+  (prop/for-all [item (gen/such-that #(-> % :sell-in pos?) (regular-item-gen) 30)]
+                (is (= (max 0 (dec (:quality item)))
                        (:quality (item/on-next-day item))))))
 
-(defspec quality-decreases-by-two-after-sell-in-date
-  (prop/for-all [item (gen/such-that #(<= (:sell-in %) 0) (s/gen ::item/item) 30)]
-                (is (= (- (:quality item) 2)
+(defspec regular-item-quality-decreases-by-two-after-sell-in-date
+  (prop/for-all [item (gen/such-that #(<= (:sell-in %) 0) (regular-item-gen) 30)]
+                (is (= (max 0 (- (:quality item) 2))
                        (:quality (item/on-next-day item))))))
 
 (defspec sell-in-decreases-by-one
-  (prop/for-all [item (s/gen ::item/item)]
+  (prop/for-all [item (item-gen)]
                 (is (= (dec (:sell-in item))
                        (:sell-in (item/on-next-day item))))))
 
 (defspec quality-cant-be-negative
-  (prop/for-all [item (s/gen ::item/item)]
+  (prop/for-all [item (item-gen)]
                 (is (nat-int? (:quality (item/on-next-day item))))))
+
+(defspec quality-limit-is-always-50
+  (prop/for-all [item (s/gen ::item/item)]
+                (is (= 50 (item/quality-limit item)))))
+
+(defspec quality-is-never-above-threshold
+  (prop/for-all [item (item-gen)]
+                (is (<= (:quality (item/on-next-day item))
+                        (item/quality-limit item)))))
+
+(defspec aged-brie-quality-increases-over-time
+  (prop/for-all [item (specific-item-gen "Aged Brie")]
+                (is (or (< (:quality item) (:quality (item/on-next-day item)))
+                        (= (:quality item) 50)))))
+
+

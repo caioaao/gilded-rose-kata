@@ -1,13 +1,22 @@
 (ns gilded-rose.item
   (:require [clojure.spec.alpha :as s]))
 
-(s/def ::name string?)
+(def special-items #{"Aged Brie"})
+
+(s/def ::name (s/or :special-items special-items :regular-items string?))
 
 (s/def ::sell-in int?)
 
 (s/def ::quality nat-int?)
 
 (s/def ::item (s/keys :req-un [::name ::sell-in ::quality]))
+
+(def default-quality-limit 50)
+
+(def quality-limits {})
+
+(defn quality-limit [item]
+  (get quality-limits (:name item) default-quality-limit))
 
 (s/fdef item
   :args (s/cat :name ::name
@@ -25,3 +34,9 @@
     (-> item
         (update :sell-in dec)
         (update :quality #(max (dec-quality %) 0)))))
+
+(defmethod on-next-day "Aged Brie"
+  [{:keys [sell-in] :as item}]
+  (-> item
+      (update :sell-in dec)
+      (update :quality #(min (inc %) default-quality-limit))))
