@@ -39,9 +39,15 @@
   (prop/for-all [item (item-gen)]
                 (is (nat-int? (:quality (item/on-next-day item))))))
 
-(defspec quality-limit-is-always-50
-  (prop/for-all [item (s/gen ::item/item)]
+(defspec quality-limit-is-50-unless-is-sulfuras
+  (prop/for-all [item (gen/such-that #(not= (:name %) "Sulfuras, Hand Of Ragnaros")
+                                     (s/gen ::item/item))]
                 (is (= 50 (item/quality-limit item)))))
+
+(defspec quality-limit-is-80-for-sulfuras
+  (prop/for-all [item (gen/fmap #(assoc  % :name "Sulfuras, Hand Of Ragnaros")
+                                (s/gen ::item/item))]
+                (is (= 80 (item/quality-limit item)))))
 
 (defspec quality-is-never-above-threshold
   (prop/for-all [item (item-gen)]

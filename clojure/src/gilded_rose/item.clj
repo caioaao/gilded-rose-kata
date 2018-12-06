@@ -1,7 +1,7 @@
 (ns gilded-rose.item
   (:require [clojure.spec.alpha :as s]))
 
-(def special-items #{"Aged Brie"})
+(def special-items #{"Aged Brie" "Sulfuras, Hand Of Ragnaros"})
 
 (s/def ::name (s/or :special-items special-items :regular-items string?))
 
@@ -13,7 +13,7 @@
 
 (def default-quality-limit 50)
 
-(def quality-limits {})
+(def quality-limits {"Sulfuras, Hand Of Ragnaros" 80})
 
 (defn quality-limit [item]
   (get quality-limits (:name item) default-quality-limit))
