@@ -4,6 +4,10 @@
 
 (s/def ::inventory (s/coll-of ::item/item))
 
+(s/fdef update-quality
+  :args (s/cat :items ::inventory)
+  :ret ::inventory)
+
 (defn update-quality [items]
   (map
    (fn[item] (cond

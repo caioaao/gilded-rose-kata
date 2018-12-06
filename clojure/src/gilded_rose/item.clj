@@ -3,9 +3,9 @@
 
 (s/def ::name string?)
 
-(s/def ::sell-in pos-int?)
+(s/def ::sell-in int?)
 
-(s/def ::quality pos-int?)
+(s/def ::quality nat-int?)
 
 (s/def ::item (s/keys :req-un [::name ::sell-in ::quality]))
 
