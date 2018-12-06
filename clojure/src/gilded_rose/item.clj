@@ -16,3 +16,12 @@
   :ret ::item)
 (defn item [item-name, sell-in, quality]
   {:name item-name, :sell-in sell-in, :quality quality})
+
+(defmulti on-next-day :item)
+
+(defmethod on-next-day :default
+  [{:keys [sell-in] :as item}]
+  (let [dec-quality (if (> sell-in 0) dec #(- % 2))]
+    (-> item
+        (update :sell-in dec)
+        (update :quality #(max (dec-quality %) 0)))))
