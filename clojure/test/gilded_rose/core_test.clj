@@ -64,9 +64,46 @@
     (is (= 80  (:quality (gilded-rose/sulfuras))))))
 
 (deftest aged-items
-  (testing "aged items increase in quality over time"
-    (is (match? {:sell-in 9, :quality 8}
+  (testing "increase in quality over time"
+    (is (match? {:sell-in 9, :quality 10}
                 (-> (gilded-rose/item "any" 10 9)
+                    gilded-rose/as-aged
+                    gilded-rose/update-item)))
+
+    (is (match? {:sell-in 18, :quality 44}
+                (-> (gilded-rose/item "any" 19 43)
+                    gilded-rose/as-aged
+                    gilded-rose/update-item)))
+
+    (is (match? {:quality 44}
+                (-> (gilded-rose/item "any" 0 43)
+                    gilded-rose/as-aged
+                    gilded-rose/update-item))))
+
+  (testing "quality never go above 50"
+    (is (match? {:sell-in 9, :quality 50}
+                (-> (gilded-rose/item "any" 10 49)
+                    gilded-rose/as-aged
+                    gilded-rose/update-item)))
+
+    (is (match? {:sell-in 9, :quality 50}
+                (-> (gilded-rose/item "any" 10 50)
+                    gilded-rose/as-aged
+                    gilded-rose/update-item)))
+
+    (is (match? {:quality 50}
+                (-> (gilded-rose/item "any" -10 50)
+                    gilded-rose/as-aged
+                    gilded-rose/update-item)))
+
+    (is (match? {:quality 50}
+                (-> (gilded-rose/item "any" 0 50)
+                    gilded-rose/as-aged
+                    gilded-rose/update-item)))
+
+    (is (match? {:quality 50}
+                (-> (gilded-rose/item "any" 0 49)
+                    gilded-rose/as-aged
                     gilded-rose/update-item)))))
 
 

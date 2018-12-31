@@ -7,6 +7,9 @@
 (defn legendary? [item]
   (= (:category item) :legendary))
 
+(defn aged? [item]
+  (= (:category item) :aged))
+
 (defn update-sell-in [item]
   (if (not (legendary? item))
     (update item :sell-in dec)
@@ -17,7 +20,7 @@
         (and (< (:sell-in item) 0) (= "Backstage passes to a TAFKAL80ETC concert" (:name item)))
         (assoc item :quality 0)
 
-        (or (= (:name item) "Aged Brie") (= (:name item) "Backstage passes to a TAFKAL80ETC concert"))
+        (or (aged? item) (= (:name item) "Backstage passes to a TAFKAL80ETC concert"))
         (if (and (= (:name item) "Backstage passes to a TAFKAL80ETC concert") (>= (:sell-in item) 5) (< (:sell-in item) 10))
           (merge item {:quality (inc (inc (:quality item)))})
           (if (and (= (:name item) "Backstage passes to a TAFKAL80ETC concert")
