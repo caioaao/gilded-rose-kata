@@ -1,7 +1,8 @@
 (ns gilded-rose.core)
 
 (defn regular? [item]
-  (= (:category item) :regular))
+  (or (not (:category item))
+      (= (:category item) :regular)))
 
 (defn legendary? [item]
   (= (:category item) :legendary))
@@ -88,14 +89,26 @@
 ;;    :sell-in     sell-in
 ;;    :quality     quality})
 
-(defn item [category item-name sell-in quality]
-  {:category category
-   :name     item-name
+(defn item [item-name sell-in quality]
+  {:name     item-name
    :sell-in  sell-in
    :quality  quality})
 
+(defn as-legendary [item]
+  (assoc item :category :legendary))
+
+(defn as-regular [item]
+  (assoc item :category :regular))
+
+(defn as-aged [item]
+  (assoc item :category :aged))
+
+(defn as-conjured [item]
+  (assoc item :category :conjured))
+
 (defn sulfuras []
-  (item :legendary "Sulfuras, Hand Of Ragnaros" 0 80))
+  (as-legendary
+   (item "Sulfuras, Hand Of Ragnaros" 0 80)))
 
 (defn update-current-inventory[]
   (let [inventory [(item "+5 Dexterity Vest" 10 20)
