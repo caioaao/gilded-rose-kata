@@ -178,4 +178,17 @@
                 (-> (gilded-rose/backstage-pass "any" 4 48)
                     gilded-rose/update-item)))))
 
-
+(deftest conjured-items
+  (testing "any item can be conjured without leaving its category"
+    (is (let [item (gilded-rose/as-conjured (gilded-rose/sulfuras))]
+          (and (gilded-rose/conjured? item)
+               (gilded-rose/legendary? item))))
+    (is (let [item (gilded-rose/as-conjured (gilded-rose/aged-brie 120 20))]
+          (and (gilded-rose/conjured? item)
+               (gilded-rose/aged? item))))
+    (is (let [item (gilded-rose/as-conjured (gilded-rose/item "some" 8 20))]
+          (and (gilded-rose/conjured? item)
+               (gilded-rose/regular? item))))
+    (is (let [item (gilded-rose/as-conjured (gilded-rose/backstage-pass "some pass" 3 4))]
+          (and (gilded-rose/conjured? item)
+               (gilded-rose/backstage-pass? item))))))

@@ -16,38 +16,49 @@
 (defn backstage-pass? [item]
   (of-category? item :backstage-pass))
 
+(defn conjured? [item]
+  (:conjured? item))
+
 (defn update-sell-in [item]
   (if (not (legendary? item))
     (update item :sell-in dec)
     item))
 
+(defn double-quality-decrease [new-item old-item]
+  (let [quality-delta (- (:quality new-item)
+                         (:quality old-item))]
+    (if (< quality-delta 0)
+      (update new-item :quality + quality-delta)
+      new-item)))
+
 (defn update-quality [item]
-  (-> (cond
-        (and (< (:sell-in item) 0) (backstage-pass? item))
-        (assoc item :quality 0)
+  (cond-> (cond
+            (and (< (:sell-in item) 0) (backstage-pass? item))
+            (assoc item :quality 0)
 
-        (aged? item)
-        (if (< (:quality item) 50)
-          (merge item {:quality (inc (:quality item))})
-          item)
+            (aged? item)
+            (if (< (:quality item) 50)
+              (merge item {:quality (inc (:quality item))})
+              item)
 
-        (backstage-pass? item)
-        (-> (cond
-              (< (:sell-in item) 5)  (update item :quality + 3)
-              (< (:sell-in item) 10) (update item :quality + 2)
-              :else                  (update item :quality + 1))
-            (update :quality min 50))
+            (backstage-pass? item)
+            (-> (cond
+                  (< (:sell-in item) 5)  (update item :quality + 3)
+                  (< (:sell-in item) 10) (update item :quality + 2)
+                  :else                  (update item :quality + 1))
+                (update :quality min 50))
 
-        (< (:sell-in item) 0)
-        (if (regular? item)
-          (merge item {:quality (- (:quality item) 2)})
-          item)
+            (< (:sell-in item) 0)
+            (if (regular? item)
+              (merge item {:quality (- (:quality item) 2)})
+              item)
 
-        (regular? item)
-        (update item :quality dec)
+            (regular? item)
+            (update item :quality dec)
 
-        :else item)
-      (update :quality max 0)))
+            :else item)
+    (conjured? item) (double-quality-decrease item)
+    :default         (update :quality max 0)))
 
 (defn update-item [item]
   (-> item
@@ -114,7 +125,7 @@
   (assoc item :category :aged))
 
 (defn as-conjured [item]
-  (assoc item :category :conjured))
+  (assoc item :conjured? true))
 
 (defn sulfuras []
   (as-legendary
