@@ -31,32 +31,35 @@
       (update new-item :quality + quality-delta)
       new-item)))
 
+(defmulti cat-update-quality :category)
+
+(defmethod cat-update-quality :default
+  [item]
+  (if (< (:sell-in item) 0)
+    (update item :quality - 2)
+    (update item :quality dec)))
+
+(defmethod cat-update-quality :legendary
+  [item]
+  item)
+
+(defmethod cat-update-quality :aged
+  [item]
+  (if (< (:quality item) 50)
+    (update item :quality inc)
+    item))
+
+(defmethod cat-update-quality :backstage-pass
+  [item]
+  (-> (condp <= (:sell-in item)
+        10    (update item :quality + 1)
+        5     (update item :quality + 2)
+        0     (update item :quality + 3)
+        (assoc item :quality 0))
+      (update :quality min 50)))
+
 (defn update-quality [item]
-  (cond-> (cond
-            (and (< (:sell-in item) 0) (backstage-pass? item))
-            (assoc item :quality 0)
-
-            (aged? item)
-            (if (< (:quality item) 50)
-              (merge item {:quality (inc (:quality item))})
-              item)
-
-            (backstage-pass? item)
-            (-> (cond
-                  (< (:sell-in item) 5)  (update item :quality + 3)
-                  (< (:sell-in item) 10) (update item :quality + 2)
-                  :else                  (update item :quality + 1))
-                (update :quality min 50))
-
-            (< (:sell-in item) 0)
-            (if (regular? item)
-              (merge item {:quality (- (:quality item) 2)})
-              item)
-
-            (regular? item)
-            (update item :quality dec)
-
-            :else item)
+  (cond-> (cat-update-quality item)
     (conjured? item) (double-quality-decrease item)
     :default         (update :quality max 0)))
 
@@ -64,51 +67,6 @@
   (-> item
       update-sell-in
       update-quality))
-
-#_(defn update-quality [items]
-  (->> items
-       (map (fn [item]
-              ))
-       (map
-        (fn[item] ))))
-
-;; (defprotocol Item
-;;   (on-next-day [this])
-;;   (quality [this]))
-
-;; (defn new-quality [previous-quality sell-in]
-;;   (if (< sell-in 0)
-;;     (max (- previous-quality 2) 0)
-;;     (dec previous-quality)))
-
-;; (defrecord RegularItem [description sell-in quality]
-;;   Item
-;;   (on-next-day [this]
-;;     (let [new-sell-in (dec sell-in)]
-;;       (-> (assoc this :sell-in new-sell-in)
-;;           (update :quality new-quality new-sell-in)))))
-
-;; (defrecord LegendaryItem []
-;;   Item
-;;   (quality [this] this))
-
-;; (defrecord AgedItem [description sell-in]
-;;   Item
-;;   (quality [this]))
-
-;; (defrecord BackstagePass [sell-in]
-;;   Item
-;;   (quality [this]))
-
-;; (defn item->conjured [item]
-;;   (reify Item
-;;     (quality [_] (let [new-quality (quality item)]))))
-
-;; (defn ->item [category, description, sell-in, quality]
-;;   {:category    category
-;;    :description description
-;;    :sell-in     sell-in
-;;    :quality     quality})
 
 (defn item [item-name sell-in quality]
   {:name     item-name
