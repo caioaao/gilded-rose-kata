@@ -191,4 +191,31 @@
                (gilded-rose/regular? item))))
     (is (let [item (gilded-rose/as-conjured (gilded-rose/backstage-pass "some pass" 3 4))]
           (and (gilded-rose/conjured? item)
-               (gilded-rose/backstage-pass? item))))))
+               (gilded-rose/backstage-pass? item)))))
+
+  (testing "doubles the quality decrease"
+    (is (match? (gilded-rose/sulfuras)
+                (-> (gilded-rose/sulfuras)
+                    gilded-rose/as-conjured
+                    gilded-rose/update-item)))
+
+    (is (match? {:quality 21}
+                (-> (gilded-rose/aged-brie 120 20)
+                    gilded-rose/as-conjured
+                    gilded-rose/update-item)))
+
+    (is (match? {:sell-in 7
+                 :quality 18}
+                (-> (gilded-rose/item "some" 8 20)
+                    gilded-rose/as-conjured
+                    gilded-rose/update-item)))
+
+    (is (match? {:quality 18}
+                (-> (gilded-rose/item "some" 0 22)
+                    gilded-rose/as-conjured
+                    gilded-rose/update-item)))
+
+    (is (match? {:sell-in 2, :quality 7}
+                (-> (gilded-rose/backstage-pass "some pass" 3 4)
+                    gilded-rose/as-conjured
+                    gilded-rose/update-item)))))
