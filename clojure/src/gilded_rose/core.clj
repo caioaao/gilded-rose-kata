@@ -1,14 +1,20 @@
 (ns gilded-rose.core)
 
+(defn of-category? [item category]
+  (= (:category item) category))
+
 (defn regular? [item]
   (or (not (:category item))
-      (= (:category item) :regular)))
+      (of-category? item :regular)))
 
 (defn legendary? [item]
-  (= (:category item) :legendary))
+  (of-category? item :legendary))
 
 (defn aged? [item]
-  (= (:category item) :aged))
+  (of-category? item :aged))
+
+(defn backstage-pass? [item]
+  (of-category? item :backstage-pass))
 
 (defn update-sell-in [item]
   (if (not (legendary? item))
@@ -17,19 +23,20 @@
 
 (defn update-quality [item]
   (-> (cond
-        (and (< (:sell-in item) 0) (= "Backstage passes to a TAFKAL80ETC concert" (:name item)))
+        (and (< (:sell-in item) 0) (backstage-pass? item))
         (assoc item :quality 0)
 
-        (or (aged? item) (= (:name item) "Backstage passes to a TAFKAL80ETC concert"))
-        (if (and (= (:name item) "Backstage passes to a TAFKAL80ETC concert") (>= (:sell-in item) 5) (< (:sell-in item) 10))
-          (merge item {:quality (inc (inc (:quality item)))})
-          (if (and (= (:name item) "Backstage passes to a TAFKAL80ETC concert")
-                   (>= (:sell-in item) 0)
-                   (< (:sell-in item) 5))
-            (merge item {:quality (inc (inc (inc (:quality item))))})
-            (if (< (:quality item) 50)
-              (merge item {:quality (inc (:quality item))})
-              item)))
+        (aged? item)
+        (if (< (:quality item) 50)
+          (merge item {:quality (inc (:quality item))})
+          item)
+
+        (backstage-pass? item)
+        (-> (cond
+              (< (:sell-in item) 5)  (update item :quality + 3)
+              (< (:sell-in item) 10) (update item :quality + 2)
+              :else                  (update item :quality + 1))
+            (update :quality min 50))
 
         (< (:sell-in item) 0)
         (if (regular? item)
@@ -37,7 +44,7 @@
           item)
 
         (regular? item)
-        (merge item {:quality (dec (:quality item))})
+        (update item :quality dec)
 
         :else item)
       (update :quality max 0)))
@@ -112,6 +119,13 @@
 (defn sulfuras []
   (as-legendary
    (item "Sulfuras, Hand Of Ragnaros" 0 80)))
+
+(defn aged-brie [sell-in quality]
+  (as-aged (item "Aged Brie" sell-in quality)))
+
+(defn backstage-pass [description sell-in quality]
+  (-> (item description sell-in quality)
+      (assoc :category :backstage-pass)))
 
 (defn update-current-inventory[]
   (let [inventory [(item "+5 Dexterity Vest" 10 20)

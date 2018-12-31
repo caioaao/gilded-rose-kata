@@ -106,4 +106,76 @@
                     gilded-rose/as-aged
                     gilded-rose/update-item)))))
 
+(deftest backstage-passes
+  (testing "loses its quality after sell-in"
+    (is (match? {:quality 0}
+                (-> (gilded-rose/backstage-pass "any" 0 9)
+                    gilded-rose/update-item)))
+    (is (match? {:quality 0}
+                (-> (gilded-rose/backstage-pass "any" 0 50)
+                    gilded-rose/update-item)))
+    (is (match? {:quality 0}
+                (-> (gilded-rose/backstage-pass "any" -100 50)
+                    gilded-rose/update-item))))
+
+  (testing "when sell-in is between 0 and 5, increses quality by 3"
+    (is (match? {:sell-in 0, :quality 12}
+                (-> (gilded-rose/backstage-pass "any" 1 9)
+                    gilded-rose/update-item)))
+
+    (is (match? {:sell-in 4, :quality 14}
+                (-> (gilded-rose/backstage-pass "any" 5 11)
+                    gilded-rose/update-item)))
+
+    (is (match? {:sell-in 3, :quality 22}
+                (-> (gilded-rose/backstage-pass "any" 4 19)
+                    gilded-rose/update-item))))
+
+  (testing "when sell-in is between 5 and 10, increses quality by 2"
+    (is (match? {:sell-in 7, :quality 11}
+                (-> (gilded-rose/backstage-pass "any" 8 9)
+                    gilded-rose/update-item)))
+
+    (is (match? {:sell-in 5, :quality 14}
+                (-> (gilded-rose/backstage-pass "any" 6 12)
+                    gilded-rose/update-item)))
+
+    (is (match? {:sell-in 9, :quality 22}
+                (-> (gilded-rose/backstage-pass "any" 10 20)
+                    gilded-rose/update-item))))
+
+  (testing "when sell-in is above 10, increses quality by 1"
+    (is (match? {:sell-in 10, :quality 11}
+                (-> (gilded-rose/backstage-pass "any" 11 10)
+                    gilded-rose/update-item)))
+
+    (is (match? {:sell-in 199, :quality 14}
+                (-> (gilded-rose/backstage-pass "any" 200 13)
+                    gilded-rose/update-item))))
+
+  (testing "never goes above 50"
+    (is (match? {:sell-in 10, :quality 50}
+                (-> (gilded-rose/backstage-pass "any" 11 50)
+                    gilded-rose/update-item)))
+
+    (is (match? {:sell-in 8, :quality 50}
+                (-> (gilded-rose/backstage-pass "any" 9 50)
+                    gilded-rose/update-item)))
+
+    (is (match? {:sell-in 8, :quality 50}
+                (-> (gilded-rose/backstage-pass "any" 9 49)
+                    gilded-rose/update-item)))
+
+    (is (match? {:sell-in 3, :quality 50}
+                (-> (gilded-rose/backstage-pass "any" 4 50)
+                    gilded-rose/update-item)))
+
+    (is (match? {:sell-in 3, :quality 50}
+                (-> (gilded-rose/backstage-pass "any" 4 49)
+                    gilded-rose/update-item)))
+
+    (is (match? {:sell-in 3, :quality 50}
+                (-> (gilded-rose/backstage-pass "any" 4 48)
+                    gilded-rose/update-item)))))
+
 
